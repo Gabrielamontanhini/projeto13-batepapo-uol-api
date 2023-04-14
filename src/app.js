@@ -25,14 +25,22 @@ const db = mongoClient.db()
 
 //Endpoints
 
+
 app.post("/participants", async(req, res)=> {  
+    
     const { name } = req.body
+
+    if (!name){ //validação do nome
+        return res.status(422).send("O nome deve ser preenchido")
+    }
+
     const newOne = { name: name}
     try {
     await db.collection("participants").insertOne(newOne)
-        return res.status(201)
+        return res.sendStatus(201)
     } catch (err){ res.status(500).send(err.message) }
     })
+
 
 app.get("/participants", async(req, res)=>{   
     try {
