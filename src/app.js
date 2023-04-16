@@ -49,7 +49,7 @@ app.post("/participants", async (req, res) => {
         to: 'Todos',
         text: 'entra na sala...',
         type: 'status',
-        time: now
+        time: dayjs().format("HH:mm:ss")
     }
     try {
         const participant = await db.collection("participants").findOne({ name })
