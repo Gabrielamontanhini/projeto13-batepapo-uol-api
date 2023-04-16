@@ -76,8 +76,8 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const { user } = req.headers
-    if (!user) { //validação do nome
-        return res.status(422).send("O nome deve ser preenchido")
+    if (!user ) { 
+        return res.sendStatus(422)
     }
     const { to, text, type } = req.body
     const newMessage =
@@ -104,6 +104,8 @@ app.post("/messages", async (req, res) => {
     }
 
     try {
+        const present = await db.collection("participants").findOne({user})
+        if (!present) return res.sendStatus(422)
         await db.collection("messages").insertOne(newMessage)
         res.status(201).send("Mensagem enviada!")
     }
