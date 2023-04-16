@@ -29,19 +29,21 @@ const db = mongoClient.db()
 
 //Endpoints
 
-
-
 app.post("/participants", async (req, res) => {
-    const { name } = req.body
-    const now = dayjs().format("HH:mm:ss")
 
+    const nameSchema = joi.object({
+        name: joi.string().required()
+    })
 
-    if (!name) { //validação do nome
-        return res.status(422).send("O nome deve ser preenchido")
+    const valid = nameSchema.validate(req.body, {abortEarly: false})
+    if (valid.error) {
+        const errors = valid.error.details.map(detail => detail.message)
+        return res.status(422).send(errors)
     }
 
+    const { name } = req.body
+    const now = dayjs().format("HH:mm:ss")
     const newOne = { name, lastStatus: Date.now() }
-
     const newParticipant = {
         from: name,
         to: 'Todos',
@@ -49,9 +51,8 @@ app.post("/participants", async (req, res) => {
         type: 'status',
         time: now
     }
-
     try {
-        const participant = await db.collection("participants").findOne({ name }) //validação de nome
+        const participant = await db.collection("participants").findOne({ name })
         if (participant) return res.status(409).send("Esse nome já está em uso")
         await db.collection("participants").insertOne(newOne)
         await db.collection("messages").insertOne(newParticipant)
@@ -87,11 +88,12 @@ app.post("/messages", async (req, res) => {
         type
     }
 
+
     const userSchema = joi.object({
         from: joi.string().required(),
         to: joi.string().required(),
         text: joi.string().required(),
-        type: joi.string().required()
+        type: joi.string().valid("message", "private_message").required()
     })
 
     const validation = userSchema.validate(newMessage, { abortEarly: false });
@@ -170,11 +172,40 @@ app.delete("/messages/:id", async (req, res) => { //deletar MENSAGENS
     }
 })
 
+/*app.delete("/messages/many/:filtro", async (req, res) => {
+
+    const { filtro } = req.params
+
+    try{
+        const result = await db.collection("messages").deleteMany({type: filtro})
+        if (result.deletedCount === 0) return res.status(404).send("Não encontrado")
+res.send("Mensagens deletadas com sucesso!")
+    } catch (err){
+        res.status(500).send(err.message)
+    }
+})*/
+
 
 //Limpeza do banco
 
-setInterval(() =>{
-    
+setInterval( async () =>{
+let timesUp = Date.now() - 10000
+try{
+    const inactive = await db.collection("participants").find({lastStatus: {$lt: timesUp}}).toArray()
+    console.log(inactive)
+    for (let i=0; i<inactive.length; i++){
+    await db.collection("messages").insertOne({
+        to: "Todos",
+        text: "sai da sala...",
+        type: "status",
+        from: inactive[i].name,
+        time: dayjs().format("HH:mm:ss")
+    })
+    await db.collection("participants").deleteOne({name: inactive[i].name})}
+}
+catch(err){
+
+}
 } , 15000)
 
 
