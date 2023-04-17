@@ -93,20 +93,16 @@ app.post("/messages", async (req, res) => {
         time: joi.required()
     })
     const validation = userSchema.validate(newMessage, { abortEarly: false });
-    if (validation.error)     return res.sendStatus(422)
+    if (validation.error)  return res.sendStatus(422)
     
-
     try {
-
     const online = await db.collection("participants").findOne({name: user})
     if (!online){
         return res.sendStatus(422)
     } else {
         await db.collection("messages").insertOne(newMessage)
         res.status(201).send("Mensagem enviada!")
-    }
-        
-    }
+    }}
     catch (err) {
         res.status(500).send(err.message)
     }
@@ -123,7 +119,6 @@ app.get("/messages", async (req, res) => {
 
     try {
         const messages = await db.collection("messages").find({$or:[{from: user}, {to: 'Todos'}, {to: user}]}).toArray()
-
         if (!limit){
             return res.status(200).send(messages)
         }else if ({limit}){
@@ -133,11 +128,10 @@ app.get("/messages", async (req, res) => {
         })
         const limited = limitSchema.validate(limitQuery, {abortEarly: false})
         if (limited.error){
-        return res.status(422).send(!limit)
+        return res.sendStatus(422)
         }
         res.status(200).send(messages.slice(-limit))
-    } 
-    }
+    }}
     catch (err) {
         res.status(500).send(err.message)
     }
@@ -147,7 +141,7 @@ app.get("/messages", async (req, res) => {
 
 app.post("/status", async (req, res) => {
     const  user  = req.headers.user
-    if (!user)   return res.status(404).send("Precisa preencher")
+    if (!user)   return res.sendStatus(404)
     
     try {
     const status = await db.collection("participants").findOne({ name: user })
@@ -198,7 +192,7 @@ app.delete("/messages/many/:filtro", async (req, res) => {
     try{
         const result = await db.collection("messages").deleteMany({type: filtro})
         if (result.deletedCount === 0) return res.status(404).send("Não encontrado")
-res.send("Mensagens deletadas com sucesso!")
+res.sendStatus(200)
     } catch (err){
         res.status(500).send(err.message)
     }
@@ -224,7 +218,7 @@ try{
 
 }
 catch(err){
-
+res.sendStatus(500)
 }
 } , 15000)
 
