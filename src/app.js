@@ -110,10 +110,24 @@ app.post("/messages", async (req, res) => {
 
 app.get("/messages", async (req, res) => {
     const user  = req.headers.user
-    
+    const {limit} = req.query
+
     try {
         const messages = await db.collection("messages").find({$or:[{from: user}, {to: 'Todos'}, {to: user}]}).toArray()
-        res.status(200).send(messages)
+
+        if (!limit){
+            return res.status(200).send(messages)
+        }else if ({limit}){
+            const limitQuery = {limit: Number(limit)}
+            const limitSchema = joi.object({ 
+            limit: joi.number().integer().positive() 
+        })
+        const limited = limitSchema.validate(limitQuery, {abortEarly: false})
+        if (limited.error){
+        return res.status(422).send(!limit)
+        }
+        res.status(200).send(messages.slice(-limit))
+    } 
     }
     catch (err) {
         res.status(500).send(err.message)
