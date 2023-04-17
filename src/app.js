@@ -76,9 +76,6 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const { user } = req.headers
-    if (!user ) { 
-        return res.sendStatus(422)
-    }
     const { to, text, type } = req.body
     const newMessage =
     {
@@ -87,25 +84,22 @@ app.post("/messages", async (req, res) => {
         text,
         type
     }
-
-
     const userSchema = joi.object({
         from: joi.string().required(),
         to: joi.string().required(),
         text: joi.string().required(),
         type: joi.string().valid("message", "private_message").required()
     })
-
     const validation = userSchema.validate(newMessage, { abortEarly: false });
-
     if (validation.error) {
         const errors = validation.error.details.map((detail) => detail.message);
         return res.status(422).send(errors);
     }
 
     try {
-        const present = await db.collection("participants").findOne({user})
-        if (!present) return res.sendStatus(422)
+
+    const online = await db.collection("participants").findOne({name: user})
+    if (!online) return res.sendStatus(422)
         await db.collection("messages").insertOne(newMessage)
         res.status(201).send("Mensagem enviada!")
     }
@@ -174,7 +168,7 @@ app.delete("/messages/:id", async (req, res) => { //deletar MENSAGENS
     }
 })
 
-/*app.delete("/messages/many/:filtro", async (req, res) => {
+app.delete("/messages/many/:filtro", async (req, res) => {
 
     const { filtro } = req.params
 
@@ -185,13 +179,13 @@ res.send("Mensagens deletadas com sucesso!")
     } catch (err){
         res.status(500).send(err.message)
     }
-})*/
+})
 
 
 //Limpeza do banco
 
 setInterval( async () =>{
-let timesUp = Date.now() - 10000
+let timesUp = Date.now() - 1000000
 try{
     const inactive = await db.collection("participants").find({lastStatus: {$lt: timesUp}}).toArray()
     console.log(inactive)
@@ -204,11 +198,12 @@ try{
         time: dayjs().format("HH:mm:ss")
     })
     await db.collection("participants").deleteOne({name: inactive[i].name})}
+
 }
 catch(err){
 
 }
-} , 15000)
+} , 150000)
 
 
 
