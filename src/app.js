@@ -116,6 +116,11 @@ app.get("/messages", async (req, res) => {
     const user  = req.headers.user
     const {limit} = req.query
 
+    const status = await db.collection("participants").findOne({ name: user })
+    if (!status){
+        return res.sendStatus(404)
+    }
+
     try {
         const messages = await db.collection("messages").find({$or:[{from: user}, {to: 'Todos'}, {to: user}]}).toArray()
 
@@ -206,7 +211,7 @@ setInterval( async () =>{
 let timesUp = Date.now() - 10000
 try{
     const inactive = await db.collection("participants").find({lastStatus: {$lt: timesUp}}).toArray()
-    console.log(inactive)
+    
     for (let i=0; i<inactive.length; i++){
     await db.collection("messages").insertOne({
         from: inactive[i].name,
