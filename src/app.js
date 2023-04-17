@@ -93,11 +93,8 @@ app.post("/messages", async (req, res) => {
         time: joi.required()
     })
     const validation = userSchema.validate(newMessage, { abortEarly: false });
-    if (validation.error) {
-        return res.sendStatus(422)
-    } else {
-        res.sendStatus(201)
-    }
+    if (validation.error)     return res.sendStatus(422)
+    
 
     try {
 
@@ -105,7 +102,6 @@ app.post("/messages", async (req, res) => {
     if (!online){
         return res.sendStatus(422)
     } else {
-        res.sendStatus(200)
         await db.collection("messages").insertOne(newMessage)
         res.status(201).send("Mensagem enviada!")
     }
@@ -145,17 +141,17 @@ app.get("/messages", async (req, res) => {
 
 
 app.post("/status", async (req, res) => {
-    const  user  = req.headers
-    if (!user) {
-        return res.sendStatus(404)
-    }
+    const  user  = req.headers.user
+    if (!user)   return res.status(404).send("Precisa preencher")
+    
     try {
-    const status = await db.collection("participants").findOne(user)
+    const status = await db.collection("participants").findOne({ name: user })
     if (!status) return res.sendStatus(404)
     await db.collection("participants").updateOne({name: user}, {$set: {name: user, lastStatus: Date.now()}})
-    res.sendStatus(200)
+    return res.sendStatus(200)
     }
     catch (err) { 
+        return res.sendStatus(500)
     }
 }) //post status
 
