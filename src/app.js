@@ -82,13 +82,15 @@ app.post("/messages", async (req, res) => {
         from: user,
         to,
         text,
-        type
+        type, 
+        time: dayjs().format("HH:mm:ss")
     }
     const userSchema = joi.object({
         from: joi.string().required(),
         to: joi.string().required(),
         text: joi.string().required(),
-        type: joi.string().valid("message", "private_message").required()
+        type: joi.string().valid("message", "private_message").required(), 
+        time: joi.required()
     })
     const validation = userSchema.validate(newMessage, { abortEarly: false });
     if (validation.error) {
