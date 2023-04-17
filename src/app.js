@@ -94,16 +94,22 @@ app.post("/messages", async (req, res) => {
     })
     const validation = userSchema.validate(newMessage, { abortEarly: false });
     if (validation.error) {
-        const errors = validation.error.details.map((detail) => detail.message);
-        return res.status(422).send(errors);
+        return res.sendStatus(422)
+    } else {
+        res.sendStatus(201)
     }
 
     try {
 
     const online = await db.collection("participants").findOne({name: user})
-    if (!online) return res.sendStatus(422)
+    if (!online){
+        return res.sendStatus(422)
+    } else {
+        res.sendStatus(200)
         await db.collection("messages").insertOne(newMessage)
         res.status(201).send("Mensagem enviada!")
+    }
+        
     }
     catch (err) {
         res.status(500).send(err.message)
@@ -201,16 +207,16 @@ res.send("Mensagens deletadas com sucesso!")
 //Limpeza do banco
 
 setInterval( async () =>{
-let timesUp = Date.now() - 1000000
+let timesUp = Date.now() - 10000
 try{
     const inactive = await db.collection("participants").find({lastStatus: {$lt: timesUp}}).toArray()
     console.log(inactive)
     for (let i=0; i<inactive.length; i++){
     await db.collection("messages").insertOne({
+        from: inactive[i].name,
         to: "Todos",
         text: "sai da sala...",
         type: "status",
-        from: inactive[i].name,
         time: dayjs().format("HH:mm:ss")
     })
     await db.collection("participants").deleteOne({name: inactive[i].name})}
@@ -219,7 +225,7 @@ try{
 catch(err){
 
 }
-} , 150000)
+} , 15000)
 
 
 
